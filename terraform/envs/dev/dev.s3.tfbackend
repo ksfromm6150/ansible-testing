@@ -1,0 +1,7 @@
+bucket         = "ebsco-opf-ssd-tfstate"
+dynamodb_table = "ebsco-opf-ssd-tfstate"
+key            = "dev/ansible-testing/terraform.tfstate"
+encrypt        = true
+kms_key_id     = "alias/ebsco-opf-ssd-tfstate"
+region         = "us-east-1"
+role_arn       = "arn:aws:iam::625624957199:role/gh-actions-execute"
