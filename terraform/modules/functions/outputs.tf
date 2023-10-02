@@ -1,0 +1,1 @@
+../../templates/lambdas/modules/functions/outputs.tf
