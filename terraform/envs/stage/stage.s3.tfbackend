@@ -1,7 +1,0 @@
-bucket         = "-tfstate"
-dynamodb_table = "-tfstate"
-key            = "stage/ansible-testing/terraform.tfstate"
-encrypt        = true
-kms_key_id     = "alias/-tfstate"
-region         = "us-east-1"
-role_arn       = "arn:aws:iam::       :role/gh-actions-execute"
