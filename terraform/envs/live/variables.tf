@@ -18,38 +18,11 @@ variable "vpc_security_group_ids" {
 
 /* images */
 
-variable "image_collectrenewals" {
-  type        = string
+variable "image_test" {
   description = "ECR image URI for the named lambda"
-}
-
-variable "image_customerlistener" {
   type        = string
-  description = "ECR image URI for the named lambda"
 }
-
-variable "image_gatherrequests" {
+variable "image_TEST2" {
+  description = "ECR image URI for the named lambda"
   type        = string
-  description = "ECR image URI for the named lambda"
 }
-
-variable "image_orderlistener" {
-  type        = string
-  description = "ECR image URI for the named lambda"
-}
-
-variable "image_quotedelivery" {
-  type        = string
-  description = "ECR image URI for the named lambda"
-}
-
-variable "image_vendorlistener" {
-  type        = string
-  description = "ECR image URI for the named lambda"
-}
-
-variable "image_workitemlistener" {
-  type        = string
-  description = "ECR image URI for the named lambda"
-}
-
