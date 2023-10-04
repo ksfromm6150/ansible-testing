@@ -1,0 +1,113 @@
+---
+name: Publish and Deploy
+
+on:
+  push:
+    branches:
+      - p41
+
+jobs:
+
+  publish-image:
+    strategy:
+      matrix:
+        functions:
+          - function1
+          - function2
+          - function3
+          - function4
+
+    name: Publish to ECR
+    uses: EBSCOIS/ordermanagement.shared.opf-ssd-gh-actions/.github/workflows/dotnet-publish-image.yml@main
+    with:
+      runs-on: opf-ssd-runner
+      aws-region: us-east-1
+      role-to-assume: arn:aws:iam::     :role/gh-actions-shared
+      ecr-repo-name: ansible-testing-${{ matrix.functions }}      src-dir: ./src/functions/${{ matrix.functions }}      image-artifact: null
+      matrix-step-name: publish-image
+      matrix-key: ${{ matrix.functions }}      enable-unit-tests: false
+
+
+  images-tfvars:
+    name: Generate .tfvars
+    needs: [ publish-image ]
+    uses: EBSCOIS/ordermanagement.shared.opf-ssd-gh-actions/.github/workflows/images-tfvars.yml@main
+    with:
+      runs-on: ubuntu-latest
+      matrix-step-name: publish-image
+
+  tf-plan-dev:
+    needs: [ images-tfvars ]
+    name: TF Plan - dev
+    uses: EBSCOIS/ordermanagement.shared.opf-ssd-gh-actions/.github/workflows/tf-plan.yml@main
+    with:
+      runs-on: opf-ssd-runner
+      environment: dev
+      working-directory: terraform/envs/dev
+      aws-region: us-east-1
+      tfbackend: dev.s3.tfbackend
+      tfplan: dev.tfplan
+      tfvars: ${{ needs.images-tfvars.outputs.tfvars }}
+  tf-apply-dev:
+    # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/p41' && github.event_name == 'push'
+    name: TF Apply - dev
+    needs: [ tf-plan-dev ]
+    uses: EBSCOIS/ordermanagement.shared.opf-ssd-gh-actions/.github/workflows/tf-apply.yml@main
+    with:
+      runs-on: opf-ssd-runner
+      environment: dev
+      working-directory: terraform/envs/dev
+      aws-region: us-east-1
+      tfbackend: dev.s3.tfbackend
+      tfplan: ${{ needs.tf-plan-dev.outputs.tfplan }}
+  tf-plan-stage:
+    needs: [ images-tfvars ]
+    name: TF Plan - stage
+    uses: EBSCOIS/ordermanagement.shared.opf-ssd-gh-actions/.github/workflows/tf-plan.yml@main
+    with:
+      runs-on: opf-ssd-runner
+      environment: stage
+      working-directory: terraform/envs/stage
+      aws-region: us-east-1
+      tfbackend: stage.s3.tfbackend
+      tfplan: stage.tfplan
+      tfvars: ${{ needs.images-tfvars.outputs.tfvars }}
+  tf-apply-stage:
+    # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/p41' && github.event_name == 'push'
+    name: TF Apply - stage
+    needs: [ tf-plan-stage, tf-apply-dev ]
+    uses: EBSCOIS/ordermanagement.shared.opf-ssd-gh-actions/.github/workflows/tf-apply.yml@main
+    with:
+      runs-on: opf-ssd-runner
+      environment: stage
+      working-directory: terraform/envs/stage
+      aws-region: us-east-1
+      tfbackend: stage.s3.tfbackend
+      tfplan: ${{ needs.tf-plan-stage.outputs.tfplan }}
+  tf-plan-live:
+    needs: [ images-tfvars ]
+    name: TF Plan - live
+    uses: EBSCOIS/ordermanagement.shared.opf-ssd-gh-actions/.github/workflows/tf-plan.yml@main
+    with:
+      runs-on: opf-ssd-runner
+      environment: live
+      working-directory: terraform/envs/live
+      aws-region: us-east-1
+      tfbackend: live.s3.tfbackend
+      tfplan: live.tfplan
+      tfvars: ${{ needs.images-tfvars.outputs.tfvars }}
+  tf-apply-live:
+    # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/p41' && github.event_name == 'push'
+    name: TF Apply - live
+    needs: [ tf-plan-live, tf-apply-stage ]
+    uses: EBSCOIS/ordermanagement.shared.opf-ssd-gh-actions/.github/workflows/tf-apply.yml@main
+    with:
+      runs-on: opf-ssd-runner
+      environment: live
+      working-directory: terraform/envs/live
+      aws-region: us-east-1
+      tfbackend: live.s3.tfbackend
+      tfplan: ${{ needs.tf-plan-live.outputs.tfplan }}
