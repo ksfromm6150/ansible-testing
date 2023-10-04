@@ -23,9 +23,12 @@ jobs:
       runs-on: opf-ssd-runner
       aws-region: us-east-1
       role-to-assume: arn:aws:iam::     :role/gh-actions-shared
-      ecr-repo-name: ansible-testing-${{ matrix.functions }}      src-dir: ./src/functions/${{ matrix.functions }}      image-artifact: null
+      ecr-repo-name: ansible-testing-${{ matrix.functions }}
+      src-dir: ./src/functions/${{ matrix.functions }}
+      image-artifact: null
       matrix-step-name: publish-image
-      matrix-key: ${{ matrix.functions }}      enable-unit-tests: false
+      matrix-key: ${{ matrix.functions }}      
+      enable-unit-tests: false
 
 
   images-tfvars:
