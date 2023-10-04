@@ -1,0 +1,21 @@
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app.kubernetes.io/instance: ansible-testing
+    art: opf
+    domain: ordermanagement
+    market: shared
+    name: ansible-testing
+    team: oak-mountain
+  name: ansible-testing
+  namespace: application
+spec:
+  maxReplicas: 4
+  minReplicas: 2
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ansible-testing
+  targetCPUUtilizationPercentage: 60

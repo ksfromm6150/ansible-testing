@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ansible-testing
+  namespace: application
+  labels:
+    app: ansible-testing
+spec:
+  type: ClusterIP
+  selector:
+    app: ansible-testing
+  sessionAffinity: None
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: http
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: health
+      port: 8081
+      protocol: TCP
+      targetPort: 8081

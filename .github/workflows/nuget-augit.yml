@@ -1,0 +1,25 @@
+name: Extended Checks
+on:
+  pull_request:
+
+jobs:
+  checks:
+    name: NuGet Dependency Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup DotNet Core
+        uses: actions/setup-dotnet@v1
+        with:
+          # although this is actually a 3.x project, the --vulnerable option is only available in 5.x and later
+          dotnet-version: '6.0'
+      - name: Use NuGet config set up for GitHub environment
+        run: cp .github/workflows/nuget.config .
+      - name: Restoring dependencies for projects within the solution
+        run: dotnet restore
+        env:
+          NUGET_USER: ${{ secrets.NUGET_USER }}          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}      - name: Audit NuGet dependencies
+        run: dotnet list package --vulnerable
+        env:
+          NUGET_USER: ${{ secrets.NUGET_USER }}          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}

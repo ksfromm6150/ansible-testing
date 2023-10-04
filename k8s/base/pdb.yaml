@@ -1,0 +1,11 @@
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ansible-testing
+  namespace: application
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: ansible-testing

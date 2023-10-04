@@ -1,0 +1,56 @@
+name: Extended Checks
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  checks:
+    name: Test Database Migration
+    runs-on: ubuntu-latest
+    
+    env:
+      projectNameOrderLookup: ordermanagement.shared.lookups.order.database
+      projectName: ordermanagement.shared.ansible-testing.database
+      pgHost: localhost
+      pgUser: app
+      pgPort: 5432
+      pgDatabase: migrations
+      pgPassword: verysecure
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Start PostgreSQL
+      run: docker run --name=postgres -p ${{ env.pgPort }}:5432 -e POSTGRES_USER=${{ env.pgUser }} -e POSTGRES_PASSWORD=${{ env.pgPassword }} -e POSTGRES_DB=${{ env.pgDatabase }} -d postgres:10.14
+    
+    - name: Setup .NET 6
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
+    - name: Install Fluent Migrator
+      run: dotnet tool install -g FluentMigrator.DotNet.Cli
+    - name: Install dependencies
+      run: |
+        dotnet nuget add source https://eis.jfrog.io/eis/api/nuget/net-shared-libraries-release -n "Artifactory" -u "${{ secrets.NUGET_USER }}" -p "${{ secrets.NUGET_TOKEN }}" --store-password-in-clear-text
+        dotnet restore
+    - name: Build
+      run: dotnet publish --configuration Release --no-restore --output ./publish
+    
+    - name: Setup .NET 5.0
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+    - name: Apply Order Lookup Migration
+      run: dotnet fm migrate -a ./publish/${{ env.projectNameOrderLookup }}.dll -p Postgres -c "Server=${{ env.pgHost }}; Port=${{ env.pgPort }}; Database=${{ env.pgDatabase }}; User Id=${{ env.pgUser }}; Password=${{ env.pgPassword }};"    
+    - name: Setup .NET 6
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
+    - name: Apply Migrations
+      run: dotnet fm migrate -a ./publish/${{ env.projectName }}.dll -p Postgres -c "Server=${{ env.pgHost }}; Port=${{ env.pgPort }}; Database=${{ env.pgDatabase }}; User Id=${{ env.pgUser }}; Password=${{ env.pgPassword }};" --allowDirtyAssemblies
+    - name: Test data load
+      run: |
+        docker cp ./src/data-load.sql postgres:data-load.sql
+        docker exec postgres psql -h localhost -U ${{ env.pgUser }} -d ${{ env.pgDatabase }} -a -f data-load.sql
+    - name: Stop PostgreSQL
+      run: docker stop postgres || exit 0;

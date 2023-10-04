@@ -1,0 +1,32 @@
+---
+name: Publish and Deploy
+
+on:
+  push:
+    branches:
+      - p41-k8s
+
+jobs:
+
+  publish-image:
+    name: Publish to ECR
+    uses: EBSCOIS/ordermanagement.shared.opf-ssd-gh-actions/.github/workflows/dotnet-publish-image.yml@main
+    with:
+      runs-on: opf-ssd-runner
+      aws-region: us-east-1
+      role-to-assume: arn:aws:iam::625624957199:role/gh-actions-shared
+      ecr-repo-name: ansible-testing
+
+  deploy-dev:
+    name: Deploy - dev
+    needs: [ publish-image ]
+    uses: EBSCOIS/ordermanagement.shared.opf-ssd-gh-actions/.github/workflows/eks-deploy-image.yml@main
+    with:
+      runs-on: opf-ssd-runner
+      environment: dev
+      aws-region: us-east-1
+      role-to-assume: arn:aws:iam::131828561891:role/gh-actions-dev
+      cluster-name: ssd-dev-eks
+      namespace: application
+      deployment-name: ansible-testing
+      container-name: ansible-testing
